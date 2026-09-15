@@ -1,0 +1,8 @@
+<IfModule mod_headers.c>
+    Header set X-Accel-Buffering "no"
+    Header set Cache-Control "no-cache"
+</IfModule>
+
+<IfModule mod_setenvif.c>
+    SetEnv no-gzip 1
+</IfModule>

@@ -1,0 +1,44 @@
+{
+  "name": "Domino Master",
+  "short_name": "Domino Master",
+  "description": "Sistema de gestión de torneos de dominó con puntuación por rayas",
+  "start_url": "http://frm.noip.me/desarrollo/",
+  "scope": "http://frm.noip.me/desarrollo/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0a84ff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-167x167.png",
+      "sizes": "167x167",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

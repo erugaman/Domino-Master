@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Partidas Vacías - Domino Master 9.2</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: #ffd700; }
+        .card { background: #1c1c1e; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #333; }
+        .grupo-selector { background: #2c2c2e; border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        select, button { background: #1c1c1e; border: 1px solid #444; color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        button { background: #0a84ff; }
+        button:hover { background: #0066cc; }
+        .btn-danger { background: #ff453a; }
+        .btn-danger:hover { background: #cc362e; }
+        .success { color: #30d158; }
+        .error { color: #ff453a; }
+        .warning { color: #ff9f0a; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #333; }
+        th { color: #ffd700; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        .badge-activa { background: #30d158; color: #000; }
+        .badge-completada { background: #8e8e93; color: #fff; }
+        .stats { display: flex; gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: #2c2c2e; border-radius: 12px; padding: 16px; flex: 1; text-align: center; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #ffd700; }
+        .stat-label { font-size: 12px; color: #8e8e93; }
+        .loading { text-align: center; padding: 40px; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #2c2c2e; border-top-color: #ffd700; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiar Partidas Vacías</h1>
+        <p>Elimina partidas que no tienen juegos asociados (0 juegos, 0 rayas)</p>
+
+        <div class="grupo-selector">
+            <label>🏠 Grupo:</label>
+            <select id="grupo-select">
+                <option value="">Cargando grupos...</option>
+            </select>
+            <button onclick="listarPartidas()">🔍 Buscar partidas vacías</button>
+            <button id="btn-eliminar" onclick="eliminarPartidas()" class="btn-danger" style="display: none;">🗑️ Eliminar partidas</button>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Selecciona un grupo y haz clic en "Buscar"</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'api/';
+
+        async function cargarGrupos() {
+            try {
+                const response = await fetch(API_URL + 'get_grupos.php');
+                const data = await response.json();
+                
+                if (data.success && data.grupos) {
+                    const select = document.getElementById('grupo-select');
+                    select.innerHTML = '<option value="">Seleccionar grupo...</option>';
+                    data.grupos.forEach(grupo => {
+                        const option = document.createElement('option');
+                        option.value = grupo.id;
+                        option.textContent = grupo.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                document.getElementById('content').innerHTML = `<div class="error">❌ Error cargando grupos: ${error.message}</div>`;
+            }
+        }
+
+        async function listarPartidas() {
+            const grupoId = document.getElementById('grupo-select').value;
+            if (!grupoId) {
+                alert('Selecciona un grupo primero');
+                return;
+            }
+
+            const content = document.getElementById('content');
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando partidas vacías...</p></div>';
+            document.getElementById('btn-eliminar').style.display = 'none';
+
+            try {
+                const url = `${API_URL}limpiar_partidas_vacias.php?grupo_id=${grupoId}&action=list&simular=true`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!data.success) {
+                    content.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                    return;
+                }
+
+                renderResultado(data);
+            } catch (error) {
+                content.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function eliminarPartidas() {
+            const grupoId = document.getElementById('grupo-select').value;
+            if (!grupoId) return;
+            
+            if (!confirm('⚠️ ¿Eliminar TODAS las partidas vacías?\n\nEsta acción NO se puede deshacer.')) return;
+            
+            const content = document.getElementById('content');
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Eliminando partidas...</p></div>';
+
+            try {
+                const url = `${API_URL}limpiar_partidas_vacias.php?grupo_id=${grupoId}&action=delete&simular=false`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderResultado(data);
+                    if (data.eliminadas > 0) {
+                        alert(`✅ Se eliminaron ${data.eliminadas} partidas vacías`);
+                    }
+                } else {
+                    content.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                content.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function renderResultado(data) {
+            const total = data.total_encontradas;
+            const eliminadas = data.eliminadas;
+            const esSimulacion = data.modo_simulacion;
+            
+            let html = '';
+
+            if (esSimulacion) {
+                html += `<div class="warning">🔍 MODO SIMULACIÓN - Solo se muestran las partidas, no se han eliminado</div>`;
+            } else if (eliminadas > 0) {
+                html += `<div class="success">✅ Se eliminaron ${eliminadas} partidas vacías</div>`;
+            }
+
+            // Estadísticas
+            html += `
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value">${total}</div>
+                        <div class="stat-label">Partidas vacías encontradas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${eliminadas}</div>
+                        <div class="stat-label">Partidas eliminadas</div>
+                    </div>
+                </div>
+            `;
+
+            // Tabla de partidas
+            if (data.partidas && data.partidas.length > 0) {
+                html += `
+                    <div class="card">
+                        <h3>📋 Partidas sin juegos (${data.partidas.length})</h3>
+                        <table>
+                            <thead>
+                                <tr><th>ID</th><th>Tipo Ronda</th><th>Fecha Inicio</th><th>Estado</th><th>Jugadores</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+                data.partidas.forEach(p => {
+                    const estadoClass = p.estado === 'activa' ? 'badge-activa' : 'badge-completada';
+                    html += `
+                        <tr>
+                            <td>${p.id}</td>
+                            <td>Ronda de ${p.tipo_ronda}</td>
+                            <td>${p.fecha_inicio}</td>
+                            <td><span class="badge ${estadoClass}">${p.estado}</span></td>
+                            <td>${p.total_jugadores}</td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody> </table> </div>`;
+            } else if (total === 0) {
+                html += `<div class="success">🎉 No hay partidas vacías. Todo está limpio!</div>`;
+            }
+
+            document.getElementById('content').innerHTML = html;
+            
+            if (total > 0 && esSimulacion) {
+                document.getElementById('btn-eliminar').style.display = 'inline-block';
+            } else {
+                document.getElementById('btn-eliminar').style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarGrupos();
+        });
+    </script>
+</body>
+</html>

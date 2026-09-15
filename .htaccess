@@ -1,0 +1,30 @@
+# Forzar HTTP (deshabilitar HTTPS)
+RewriteEngine On
+RewriteCond %{HTTPS} on
+RewriteRule ^(.*)$ http://%{HTTP_HOST}/$1 [R=301,L]
+
+# Headers para evitar que el navegador fuerce HTTPS
+Header always set Content-Security-Policy "upgrade-insecure-requests: 0"
+
+# Permitir CORS
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type"
+
+# Prevenir acceso a archivos sensibles
+<FilesMatch "\.(sql|log|bak)$">
+#    Order allow,deny
+#    Deny from all
+</FilesMatch>
+
+# Forzar UTF-8
+AddDefaultCharset UTF-8
+
+# Desactivar magic quotes
+php_flag magic_quotes_gpc off
+
+# Aumentar límites
+php_value max_execution_time 300
+php_value memory_limit 256M
+php_value post_max_size 50M
+php_value upload_max_filesize 50M

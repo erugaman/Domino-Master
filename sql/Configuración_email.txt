@@ -1,0 +1,11 @@
+// Configuracion de correo - CAMBIAR ESTOS VALORES
+$configCorreo = [
+    'smtp_host' => 'smtp.gmail.com',
+    'smtp_port' => 587,
+    'smtp_auth' => true,
+    'smtp_user' => 'domino.cazaypesca@gmail.com',
+    'smtp_pass' => 'omgw rblr fzsx wele',
+    'smtp_secure' => 'tls',
+    'from_email' => 'domino.cazaypesca@gmail.com',
+    'from_name' => 'Domino Master 9.2',
+];v

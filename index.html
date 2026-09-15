@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="Content-Security-Policy" content="default-src http: https: 'unsafe-inline' 'unsafe-eval'; script-src http: https: 'unsafe-inline' 'unsafe-eval'; style-src http: https: 'unsafe-inline'; img-src http: https: data:; connect-src http: https:;">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <title>Domino Master 9.2</title>
+   <link rel="stylesheet" href="style.css">
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   
+   <!-- PWA Meta Tags -->
+   <link rel="manifest" href="/desarrollo/manifest.json">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+   <meta name="apple-mobile-web-app-title" content="Domino Master">
+   <link rel="icon" type="image/x-icon" href="/desarrollo/icons/domino.ico">
+   <link rel="apple-touch-icon" href="/desarrollo/icon-192x192.png">
+   <link rel="apple-touch-icon" sizes="152x152" href="/desarrollo/icons/icon-152x152.png">
+   <link rel="apple-touch-icon" sizes="167x167" href="/desarrollo/icons/icon-152x152.png">
+   <link rel="apple-touch-icon" sizes="180x180" href="/desarrollo/icons/icon-192x192.png">
+</head>
+<body>
+
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" style="margin-top: 10px; color: var(--gray);">Cargando...</div>
+</div>
+
+<div id="global-error" class="error-message" style="display:none;"></div>
+<div id="global-success" class="success-message" style="display:none;"></div>
+
+<!-- PANTALLA DE LOGIN -->
+<div id="screen-login" class="container">
+    <div class="card" style="text-align:center;">
+        <h1 style="color:var(--gold); font-size: 20px; margin-bottom: 6px;">Domino Master 9.2</h1>
+        <div class="login-logo">🁚🂓</div>
+        <input type="text" id="login-username" placeholder="Usuario" style="margin-bottom: 10px;">
+        <input type="password" id="login-password" placeholder="Contraseña" style="margin-bottom: 14px;">
+        <button onclick="iniciarSesion()" style="background:var(--success); color:#000; width:100%; padding:12px; border-radius:10px; font-size:14px; font-weight:600;">Ingresar</button>
+        <button onclick="mostrarRegistroGrupo()" style="background:var(--primary); color:#fff; width:100%; padding:12px; border-radius:10px; margin-top:10px; font-size:14px; font-weight:600;">Crear Nuevo Grupo</button>
+    </div>
+</div>
+
+<!-- PANTALLA DE REGISTRO DE NUEVO GRUPO -->
+<div id="screen-registro-grupo" style="display:none;" class="container">
+    <div class="card">
+        <h3 style="color:var(--gold); text-align:center; margin-bottom: 12px; font-size: 16px;">📝 Crear Nuevo Grupo</h3>
+        
+        <div style="margin-bottom: 10px;">
+            <label style="color:var(--gray); font-size: 10px;">Logo del Grupo</label>
+            <div style="display:flex; gap:8px; align-items:center; margin-top: 5px;">
+                <div id="registro-logo-preview" style="width:48px; height:48px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:22px;">🁠</div>
+                <button onclick="document.getElementById('registro-logo-input').click()" style="background:var(--primary); padding:6px 10px; border-radius:8px; font-size:11px;">Subir Logo</button>
+                <input type="file" id="registro-logo-input" style="display:none" accept="image/*">
+            </div>
+        </div>
+        
+        <div class="editor-field">
+            <label>Nombre del Grupo *</label>
+            <input type="text" id="registro-grupo-nombre" placeholder="Ej: Los Amigos">
+        </div>
+        
+        <div class="editor-field">
+            <label>Descripción</label>
+            <textarea id="registro-grupo-desc" placeholder="Descripción del grupo"></textarea>
+        </div>
+        
+        <hr style="border-color:#333; margin: 10px 0;">
+        
+        <h4 style="color:var(--gold); margin-bottom: 10px; font-size: 13px;">👤 Administrador del Grupo</h4>
+        
+        <div class="editor-field">
+            <label>Nombre Completo *</label>
+            <input type="text" id="registro-admin-nombre" placeholder="Ej: Juan Pérez">
+        </div>
+        
+        <div class="editor-field">
+            <label>Email</label>
+            <input type="email" id="registro-admin-email" placeholder="correo@ejemplo.com">
+        </div>
+        
+        <div class="editor-field">
+            <label>Usuario para ingresar *</label>
+            <input type="text" id="registro-username" placeholder="Ej: juan.perez">
+        </div>
+        
+        <div class="editor-field">
+            <label>Contraseña *</label>
+            <input type="password" id="registro-password" placeholder="Mínimo 4 caracteres">
+        </div>
+        
+        <div style="display:flex; gap:8px; margin-top: 12px;">
+            <button onclick="volverALogin()" style="flex:1; background:#444; padding:10px; border-radius:8px;">Cancelar</button>
+            <button onclick="registrarNuevoGrupo()" style="flex:2; background:var(--success); padding:10px; border-radius:8px;">Crear Grupo</button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA PRINCIPAL DEL JUEGO -->
+<div id="screen-setup" style="display:none">
+    <div class="container">
+        <div class="app-header">
+            <h1>Domino Master 9.2</h1>
+        </div>
+        <div class="grupo-header">
+            <div class="grupo-info">
+                <div class="grupo-logo" id="grupo-logo">🁠</div>
+                <span class="grupo-nombre" id="grupo-nombre"></span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <button id="btn-finalizar-dia" class="btn-header warning" onclick="finalizarDia()" style="display: none;">📅 Finalizar Día</button>
+                <button id="btn-admin-grupo" class="btn-header primary" onclick="abrirAdminGrupo()">🗃️ Grupo</button>
+                <button class="btn-header" onclick="cerrarSesion()">🚪 Salir</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="connection-status" id="connection-status" style="font-size:9px; color:var(--success); text-align:right; margin-bottom: 6px;">🔄 Conectando...</div>
+            <div class="tabs">
+                <button class="btn-tab active" onclick="showTab('play')">🎮 JUGAR</button>
+                <button class="btn-tab" onclick="showTab('rank')">🏆 RANK</button>
+                <button class="btn-tab" onclick="showTab('stats')">📊 STATS</button>
+                <button class="btn-tab" onclick="showTab('hist')">📜 HIST</button>
+				<button class="btn-tab" id="tab-perfil" onclick="showTab('perfil')">👤 MI PERFIL</button>
+                <button class="btn-tab" id="tab-edit" onclick="showTab('edit')">👥 JUGS</button>
+                <button class="btn-tab" id="tab-sett" onclick="showTab('sett')">⚙️ CONF</button>
+            </div>
+            
+            <div id="view-play" class="tab-content">
+                <select id="round-type" onchange="createSelectors()">
+                    <option value="4">Ronda de 4 (3 Juegos)</option>
+                    <option value="5">Ronda de 5 (5 Juegos)</option>
+                    <option value="6">Ronda de 6 (Triangular)</option>
+                    <option value="7" selected>Ronda de 6 (Completa - 8 Juegos)</option>
+                </select>
+                <div id="selector-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"></div>
+                <button onclick="beginRonda()" style="background:var(--success); color:#000; width:100%; padding:12px; border-radius:10px; margin-top:12px; font-size:14px; font-weight:600;">INICIAR PARTIDA</button>
+            </div>
+
+            <div id="view-rank" class="tab-content" style="display:none"><div id="rank-body"></div></div>
+            
+            <div id="view-stats" class="tab-content" style="display:none">
+                <div class="card" style="padding: 0; background: transparent;">
+                    <div class="chart-container">
+                        <canvas id="chartRayas"></canvas>
+                    </div>
+                    <button onclick="renderStats()" style="background:var(--primary); color:#fff; padding:8px; width:100%; margin-top:6px; font-size:12px;">🔄 Actualizar Gráfico</button>
+                </div>
+                <div id="stats-summary" class="stats-container"></div>
+                <div class="card">
+                    <h3 style="color:var(--gold); margin-bottom:10px; font-size:13px;">🏆 Mejores Parejas</h3>
+                    <div id="mejores-parejas"><div style="text-align:center; color:var(--gray); padding:12px;">Cargando...</div></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--gold); margin-bottom:10px; font-size:13px;">💰 Top Rayas</h3>
+                    <div class="top-buttons">
+                        <button onclick="mostrarTop('rayas_totales')" class="top-btn active" id="btn-rayas-totales">Totales</button>
+                        <button onclick="mostrarTop('rayas_ganadas')" class="top-btn" id="btn-rayas-ganadas">Ganadas</button>
+                        <button onclick="mostrarTop('rayas_perdidas')" class="top-btn" id="btn-rayas-perdidas">Perdidas</button>
+                    </div>
+                    <div id="top-rayas-content"><div style="text-align:center; color:var(--gray); padding:12px;">Selecciona una categoría</div></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--gold); margin-bottom:10px; font-size:13px;">💔 Peores Parejas</h3>
+                    <div id="peores-parejas"><div style="text-align:center; color:var(--gray); padding:12px;">Cargando...</div></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--gold); margin-bottom:10px; font-size:13px;">📊 Resumen de Parejas</h3>
+                    <div id="resumen-parejas"></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--gold); margin-bottom:10px; font-size:13px;">📋 Todas las Parejas</h3>
+                    <div id="tabla-parejas" style="max-height:300px; overflow-y:auto; overflow-x:auto;"><div style="text-align:center; color:var(--gray); padding:12px;">Cargando...</div></div>
+                </div>
+            </div>
+            
+            <div id="view-hist" class="tab-content" style="display:none"><div id="history-list"></div></div>
+            
+            <div id="view-edit" class="tab-content" style="display:none">
+                <div id="player-list"></div>
+                <button id="btn-nuevo-jugador" onclick="openEditor()" style="background:var(--primary); color:#fff; width:100%; padding:10px; border-radius:8px; font-size:13px; margin-top:10px; font-weight:600;">+ Nuevo Jugador</button>
+            </div>
+            
+            <!-- Pestaña Mi Perfil -->
+            <div id="view-perfil" class="tab-content" style="display:none">
+                <div class="card">
+                    <h3 style="color:var(--gold); margin-bottom: 12px; text-align:center; font-size: 16px;">👤 Mi Perfil</h3>
+                    <div id="perfil-info" class="perfil-container">
+                        <div style="text-align:center; color:var(--gray); padding:20px;">Cargando información...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="view-sett" class="tab-content" style="display:none">
+                <div class="export-section">
+                    <button id="btn-export-ranking" class="btn-export" onclick="exportRankingCSV()">📥 Exportar Ranking</button>
+                    <button id="btn-export-history" class="btn-export" onclick="exportHistoryCSV()">📥 Exportar Histórico</button>
+                    <button id="btn-export-parejas" class="btn-export" onclick="exportParejasCSV()">📥 Exportar Estadísticas de Parejas</button>
+                </div>
+                <button id="btn-recalcular-estadisticas" onclick="recalcularEstadisticas()" style="background:var(--warning); color:#000; padding:10px; width:100%; border-radius:10px; margin-top:10px; font-weight:600;">🔄 RECALCULAR ESTADÍSTICAS</button>
+                <button id="btn-reset-history" onclick="resetHistory()" style="background:var(--danger); color:#fff; padding:10px; width:100%; border-radius:10px; margin-top:10px; font-weight:600;">🗑️ BORRAR HISTORIAL</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA DE JUEGO -->
+<div id="screen-game" style="display:none">
+    <div class="container">
+        <div class="card">
+            <div id="game-header" style="color:var(--warning); margin-bottom:6px; text-align:center; font-size:12px;"></div>
+            <div id="game-info-bar"><div id="game-number" class="game-number" style="text-align:center; font-size:10px; color:var(--gray);"></div></div>
+            <div id="descanso-info"></div>
+            <div style="display:flex; gap:6px; flex-wrap: wrap;">
+                <div style="flex:1; min-width: 130px; background:#262629; padding:8px; border-radius:10px;">
+                    <div id="game-imgs-a" class="game-player-imgs"></div>
+                    <div id="names-a" style="font-size:10px; text-align:center; height:auto; min-height: 28px;"></div>
+                    <div class="score-display" id="score-a">0</div>
+                    <input type="number" id="pts-a" class="input-score-big" placeholder="0" min="1">
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="sumPts('A')" class="btn-add-big">+</button>
+                        <button onclick="sumEmpate('A')" class="btn-empate">EMPATE</button>
+                    </div>
+                    <div id="list-a" class="points-list"></div>
+                </div>
+                <div style="flex:1; min-width: 130px; background:#262629; padding:8px; border-radius:10px;">
+                    <div id="game-imgs-b" class="game-player-imgs"></div>
+                    <div id="names-b" style="font-size:10px; text-align:center; height:auto; min-height: 28px;"></div>
+                    <div class="score-display" id="score-b">0</div>
+                    <input type="number" id="pts-b" class="input-score-big" placeholder="0" min="1">
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="sumPts('B')" class="btn-add-big">+</button>
+                        <button onclick="sumEmpate('B')" class="btn-empate">EMPATE</button>
+                    </div>
+                    <div id="list-b" class="points-list"></div>
+                </div>
+            </div>
+            <button id="btn-next" onclick="registrarJuego()" style="display:none; width:100%; padding:12px; margin-top:10px; background:var(--success); color:#000; font-weight:600;">REGISTRAR JUEGO</button>
+            <button onclick="abandonarRonda()" style="width:100%; margin-top:10px; color:var(--danger); background:none; border: 1px solid var(--danger); padding: 10px;  border-radius: 10px; font-weight:500; cursor: pointer;">
+			🚪 ABANDONAR
+			</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de selector de mano -->
+<div id="hand-selector-overlay" class="overlay">
+    <div class="overlay-container">
+        <div class="card">
+            <div class="selector-title">👑 Selecciona el Jugador Mano</div>
+            <div id="hand-selector-list"></div>
+            <button class="selector-confirm-btn" onclick="closeHandSelector()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de nueva ronda -->
+<div id="next-round-overlay" class="overlay">
+    <div class="overlay-container"><div class="card">
+        <h3 style="color:var(--gold); text-align:center; font-size: 15px;">🔄 Nueva Ronda</h3>
+        <div id="next-round-info"></div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button onclick="cancelNextRound()" style="flex:1; background:#444; padding:10px; border-radius:8px;">Terminar</button>
+            <button onclick="confirmNextRound()" style="flex:2; background:var(--success); padding:10px; border-radius:8px;">Continuar</button>
+        </div>
+    </div></div>
+</div>
+
+<!-- Overlay de editor de jugadores -->
+<div id="editor-overlay" class="overlay">
+    <div class="overlay-container">
+        <div class="editor-card card">
+            <div class="editor-title" style="text-align:center; font-size:16px; color:var(--gold); margin-bottom:12px;">✏️ Editar Jugador</div>
+            
+            <div class="editor-photo-container" onclick="document.getElementById('file-input').click()">
+                <img id="edit-img-preview" src="" alt="Foto de perfil">
+                <div class="editor-photo-overlay">📷 Cambiar foto</div>
+            </div>
+            
+            <div class="image-info" id="image-info">
+                <span class="image-size">0 KB</span> - Haz clic para seleccionar imagen (máx 5MB)
+            </div>
+            
+            <div class="upload-progress" id="upload-progress" style="display:none; height:2px; background:#2c2c2e; border-radius:2px; margin-top:6px;">
+                <div class="progress-bar" id="progress-bar" style="height:100%; background:var(--success); width:0%;"></div>
+            </div>
+            
+            <input type="file" id="file-input" style="display:none" accept="image/jpeg,image/png,image/gif,image/webp">
+            
+            <div class="editor-field">
+                <label>Nombre</label>
+                <input type="text" id="edit-name" placeholder="Ej: Juan Pérez">
+            </div>
+            
+            <div class="editor-field">
+                <label>Email</label>
+                <input type="email" id="edit-email" placeholder="correo@ejemplo.com">
+            </div>
+            
+            <div class="editor-field">
+                <label>Teléfono</label>
+                <input type="tel" id="edit-phone" placeholder="+52 555 123 4567">
+            </div>
+            
+            <div class="editor-field">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" id="edit-bday">
+            </div>
+            
+            <div class="editor-buttons">
+                <div onclick="closeEditor()" class="editor-btn-cancel">Cancelar</div>
+                <div onclick="savePlayer()" class="editor-btn-save">💾 Guardar</div>
+            </div>
+            
+            <div id="btn-delete-player" onclick="deletePlayer()" class="editor-btn-delete">🗑️ Eliminar Jugador</div>
+            
+            <div id="cambiar-password-section" style="display:none; margin-top: 12px; padding-top: 10px; border-top: 1px solid #333;">
+                <h4 style="color:var(--gold); margin-bottom: 8px; font-size:12px;">🔐 Cambiar Contraseña</h4>
+                <div class="editor-field">
+                    <label>Nueva Contraseña</label>
+                    <input type="password" id="new-password" placeholder="Nueva contraseña (mínimo 4 caracteres)">
+                </div>
+                <div class="editor-field">
+                    <label>Confirmar Contraseña</label>
+                    <input type="password" id="confirm-password" placeholder="Confirmar nueva contraseña">
+                </div>
+                <div id="password-message" style="font-size: 10px; margin-bottom: 6px;"></div>
+                <button onclick="cambiarPassword()" style="background:var(--primary); color:#fff; width:100%; padding:8px; border-radius:8px; margin-top:4px;">Cambiar Contraseña</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de administración de grupo -->
+<div id="admin-grupo-overlay" class="overlay">
+    <div class="overlay-container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="color:var(--gold); margin:0; font-size:15px;">⚙️ Administrar Grupo</h3>
+                <button onclick="cerrarAdminGrupo()" style="background:#444; color:#fff; border:none; border-radius:20px; padding:5px 12px; cursor:pointer;">✖ Cerrar</button>
+            </div>
+            
+            <div class="editor-field">
+                <label>Nombre del Grupo</label>
+                <input type="text" id="admin-grupo-nombre" placeholder="Nombre del grupo">
+            </div>
+            
+            <div class="editor-field">
+                <label>Descripción</label>
+                <textarea id="admin-grupo-desc" placeholder="Descripción del grupo"></textarea>
+            </div>
+            
+            <div class="editor-field">
+                <label>Logo del Grupo</label>
+                <div style="display:flex; gap:8px; align-items:center; margin-top: 5px;">
+                    <div id="admin-grupo-logo-preview" style="width:48px; height:48px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:22px;">🁠</div>
+                    <button onclick="document.getElementById('admin-grupo-logo-input').click()" style="background:var(--primary); padding:6px 10px; border-radius:8px;">Cambiar Logo</button>
+                    <input type="file" id="admin-grupo-logo-input" style="display:none" accept="image/*">
+                </div>
+            </div>
+            
+            <button onclick="abrirAdminUsuarios()" style="background:var(--primary); color:#fff; width:100%; padding:10px; border-radius:8px; margin: 8px 0; font-weight:600;">👥 Administrar Usuarios</button>
+            
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button onclick="guardarCambiosGrupo()" style="flex:2; background:var(--success); color:#000; padding:10px; border-radius:8px; font-weight:600;">💾 Guardar Cambios</button>
+                <button onclick="eliminarGrupo()" style="flex:1; background:var(--danger); color:#fff; padding:10px; border-radius:8px; font-weight:600;">🗑️ Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

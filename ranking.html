@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Ranking del Día - Domino Master 9.2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #0a0a0a; color: #ffffff; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid #333; text-align: center; }
+        .logo { font-size: 48px; margin-bottom: 8px; }
+        .title { color: #ffd700; font-size: 28px; font-weight: bold; margin-bottom: 8px; }
+        .subtitle { color: #8e8e93; font-size: 14px; }
+        
+        /* Selector de fecha - puede estar oculto */
+        .date-selector { background: #1c1c1e; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #333; display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .date-selector label { color: #ffd700; font-weight: bold; }
+        .date-selector select, .date-selector input { background: #2c2c2e; border: 1px solid #444; color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 14px; }
+        .date-selector button { background: #0a84ff; color: #fff; border: none; padding: 8px 24px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .date-selector button:hover { background: #0066cc; transform: scale(1.02); }
+        
+        /* Ocultar el selector */
+        .date-selector.hidden { display: none; }
+        
+        /* Barra de información del grupo */
+        .info-bar { background: #2c2c2e; border-radius: 12px; padding: 12px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .info-bar .grupo-info { color: #ffd700; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .info-bar .fecha-info { color: #8e8e93; }
+        .info-bar .btn-compartir { background: #30d158; color: #000; border: none; padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .info-bar .btn-compartir:hover { transform: scale(1.02); background: #28a745; }
+        .info-bar .btn-volver { background: #0a84ff; color: #fff; border: none; padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .info-bar .btn-volver:hover { transform: scale(1.02); background: #0066cc; }
+        
+        .loading { text-align: center; padding: 60px; color: #8e8e93; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #2c2c2e; border-top-color: #ffd700; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .card { background: #1c1c1e; border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 1px solid #333; }
+        .card-title { color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 16px; border-left: 3px solid #ffd700; padding-left: 12px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-item { background: #2c2c2e; border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-label { font-size: 12px; color: #8e8e93; margin-bottom: 8px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #ffd700; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 8px; background: #2c2c2e; color: #ffd700; font-size: 13px; }
+        td { padding: 10px 8px; border-bottom: 1px solid #2c2c2e; }
+        .highlight { background: rgba(255, 215, 0, 0.1); }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; }
+        .positive { color: #30d158; font-weight: bold; }
+        .negative { color: #ff453a; font-weight: bold; }
+        .partida-item { background: #2c2c2e; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+        .partida-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; transition: background 0.2s; }
+        .partida-header:hover { background: #3a3a3c; }
+        .partida-header .info { display: flex; gap: 20px; flex-wrap: wrap; }
+        .partida-header .badge { background: #ffd700; color: #000; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .partida-header .icon { font-size: 20px; transition: transform 0.2s; }
+        .partida-header.expanded .icon { transform: rotate(180deg); }
+        .partida-content { display: none; padding: 16px; border-top: 1px solid #444; }
+        .partida-content.show { display: block; }
+        .juego-item { background: #1c1c1e; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+        .juego-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #444; }
+        .juego-num { color: #ffd700; font-weight: bold; }
+        .juego-rayas { font-weight: bold; }
+        .equipos { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .equipo { flex: 1; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; }
+        .equipo-tag { font-size: 11px; color: #8e8e93; margin-bottom: 6px; }
+        .equipo-ganador .equipo-tag { color: #30d158; }
+        .equipo-perdedor .equipo-tag { color: #ff453a; }
+        .jugadores { color: #e1d6e3; display: flex; gap: 8px; flex-wrap: wrap; }
+        .jugador { display: flex; align-items: center; gap: 6px; background: #2c2c2e; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        .jugador img { width: 20px; height: 20px; border-radius: 50%; }
+        .mano { color: #ffd700; margin-left: 4px; }
+        .puntaje { font-size: 16px; font-weight: bold; margin-top: 8px; text-align: center; }
+        .error { background: rgba(255, 69, 58, 0.2); border: 1px solid #ff453a; border-radius: 12px; padding: 20px; text-align: center; color: #ff453a; }
+        .footer { text-align: center; padding: 20px; color: #6b6b6b; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🁚🂓</div>
+            <div class="title">Domino Master 9.2</div>
+            <div class="subtitle">Ranking y estadísticas del día</div>
+        </div>
+
+        <!-- Selector de fecha (se oculta si vienen parámetros) -->
+        <div id="date-selector" class="date-selector">
+            <label>🏠 Grupo:</label>
+            <select id="grupo-select">
+                <option value="">Cargando grupos...</option>
+            </select>
+            
+            <label>📅 Fecha:</label>
+            <input type="date" id="fecha" value="">
+            
+            <button onclick="cargarRanking()">🔍 Buscar</button>			
+        </div>
+
+        <!-- Barra de información (visible solo cuando hay parámetros) -->
+        <div id="info-bar" class="info-bar" style="display: none;">
+            <div class="grupo-info">
+                <span>🏠</span>
+                <span id="info-grupo-nombre">Cargando...</span>
+            </div>
+            <div class="fecha-info">
+                📅 Fecha: <span id="info-fecha"></span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-compartir" onclick="compartirEnlace()">📤 Compartir</button>
+                <a href="ranking.html" class="btn-volver">↩ Volver</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Cargando datos...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            Domino Master 9.2 - Sistema de estadísticas
+        </div>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_URL = '/desarrollo/api/';
+        
+        // Variables para parámetros de URL
+        let urlGrupoId = null;
+        let urlFecha = null;
+        let modoDirecto = false;
+
+        // Leer parámetros de la URL
+        function obtenerParametrosURL() {
+            const params = new URLSearchParams(window.location.search);
+            urlGrupoId = params.get('grupo_id');
+            urlFecha = params.get('fecha');
+            
+            modoDirecto = (urlGrupoId !== null && urlFecha !== null);
+            
+            console.log('Parámetros URL - grupo_id:', urlGrupoId, 'fecha:', urlFecha, 'modoDirecto:', modoDirecto);
+        }
+
+        // Configurar interfaz según modo
+        function configurarInterfazSegunModo(grupoNombre, fecha) {
+            const dateSelector = document.getElementById('date-selector');
+            const infoBar = document.getElementById('info-bar');
+            
+            if (modoDirecto) {
+                dateSelector.classList.add('hidden');
+                infoBar.style.display = 'flex';
+                document.getElementById('info-grupo-nombre').innerHTML = grupoNombre || 'Grupo ' + urlGrupoId;
+                document.getElementById('info-fecha').innerHTML = fecha || urlFecha;
+            } else {
+                dateSelector.classList.remove('hidden');
+                infoBar.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            obtenerParametrosURL();
+            cargarGrupos();
+            
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha').value = urlFecha || hoy;
+        });
+
+        async function cargarGrupos() {
+            try {
+                console.log('Cargando grupos desde:', API_URL + 'get_grupos.php');
+                const response = await fetch(API_URL + 'get_grupos.php');
+                const data = await response.json();
+                console.log('Respuesta grupos:', data);
+                
+                if (data.success && data.grupos) {
+                    const select = document.getElementById('grupo-select');
+                    select.innerHTML = '';
+                    
+                    data.grupos.forEach(grupo => {
+                        const option = document.createElement('option');
+                        option.value = grupo.id;
+                        option.textContent = grupo.nombre;
+                        select.appendChild(option);
+                    });
+                    
+                    let grupoSeleccionado = null;
+                    if (urlGrupoId && data.grupos.find(g => g.id == urlGrupoId)) {
+                        select.value = urlGrupoId;
+                        grupoSeleccionado = data.grupos.find(g => g.id == urlGrupoId);
+                    } else if (data.grupos.length > 0) {
+                        select.value = data.grupos[0].id;
+                        grupoSeleccionado = data.grupos[0];
+                    }
+                    
+                    configurarInterfazSegunModo(grupoSeleccionado?.nombre, urlFecha);
+                    
+                    if (modoDirecto && urlGrupoId && urlFecha) {
+                        cargarRankingDirecto(urlGrupoId, urlFecha);
+                    } else {
+                        cargarRanking();
+                    }
+                    
+                    if (!modoDirecto) {
+                        select.addEventListener('change', function() {
+                            actualizarURL(this.value, document.getElementById('fecha').value);
+                        });
+                        
+                        const fechaInput = document.getElementById('fecha');
+                        fechaInput.addEventListener('change', function() {
+                            actualizarURL(select.value, this.value);
+                        });
+                    }
+                    
+                } else {
+                    document.getElementById('content').innerHTML = '<div class="error">❌ Error cargando grupos: ' + (data.error || 'Desconocido') + '</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('content').innerHTML = '<div class="error">❌ Error de conexión al cargar grupos: ' + error.message + '</div>';
+            }
+        }
+        
+        async function cargarRankingDirecto(grupoId, fecha) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando datos del ${fecha}...</p>
+                </div>
+            `;
+
+            try {
+                const url = `${API_URL}get_ranking_dia_completo.php?grupo_id=${grupoId}&fecha=${fecha}`;
+                console.log('Consultando (modo directo):', url);
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+
+                if (!data.success) {
+                    content.innerHTML = `<div class="error">❌ Error: ${data.error || 'No se pudieron cargar los datos'}</div>`;
+                    return;
+                }
+
+                renderRanking(data);
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = `
+                    <div class="error">
+                        ❌ Error de conexión: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function actualizarURL(grupoId, fecha) {
+            if (!modoDirecto) {
+                const newUrl = `${window.location.pathname}?grupo_id=${grupoId}&fecha=${fecha}`;
+                window.history.pushState({}, '', newUrl);
+            }
+        }
+
+        function compartirEnlace() {
+            const grupoId = modoDirecto ? urlGrupoId : document.getElementById('grupo-select').value;
+            const fecha = modoDirecto ? urlFecha : document.getElementById('fecha').value;
+            const enlace = `${window.location.origin}${window.location.pathname}?grupo_id=${grupoId}&fecha=${fecha}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Ranking Domino Master',
+                    text: `Ranking del grupo para el ${fecha}`,
+                    url: enlace
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(enlace).then(() => {
+                    alert('✅ Enlace copiado al portapapeles:\n' + enlace);
+                }).catch(() => {
+                    prompt('📋 Copia este enlace manualmente:', enlace);
+                });
+            }
+        }
+
+        async function cargarRanking() {
+            if (modoDirecto) return;
+            
+            const fecha = document.getElementById('fecha').value;
+            const grupoId = document.getElementById('grupo-select').value;
+            
+            if (!fecha || !grupoId) {
+                document.getElementById('content').innerHTML = '<div class="error">❌ Selecciona un grupo y una fecha</div>';
+                return;
+            }
+
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando datos del ${fecha}...</p>
+                </div>
+            `;
+
+            try {
+                const url = `${API_URL}get_ranking_dia_completo.php?grupo_id=${grupoId}&fecha=${fecha}`;
+                console.log('Consultando:', url);
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+
+                if (!data.success) {
+                    content.innerHTML = `<div class="error">❌ Error: ${data.error || 'No se pudieron cargar los datos'}</div>`;
+                    return;
+                }
+
+                renderRanking(data);
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = `
+                    <div class="error">
+                        ❌ Error de conexión: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderRanking(data) {
+            const tieneDatos = data.estadisticas_jugadores && data.estadisticas_jugadores.length > 0;
+            const textoFechas = data.texto_fechas || data.fecha;
+            const esPeriodoMultiple = data.es_periodo_multiple || false;
+            
+            let html = '';
+
+            // Mostrar nota si es periodo multiple
+            let notaPeriodo = '';
+            if (esPeriodoMultiple && data.fechas_periodo) {
+                notaPeriodo = `
+                    <div class="card" style="background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; text-align: center;">
+                        <div style="color: #ffd700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span>🌙</span> Periodo que abarca: ${data.fechas_periodo.join(' y ')} (sesión de juego nocturna) <span>🌙</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Resumen General
+            html += `
+                <div class="card">
+                    <div class="card-title">📊 Resumen del periodo - ${textoFechas}</div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">🁚🂓 Partidas Jugadas</div>
+                            <div class="stat-value">${data.resumen_general.total_partidas}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">🃏 Juegos Realizados</div>
+                            <div class="stat-value">${data.resumen_general.total_juegos}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">⭐ Total Rayas</div>
+                            <div class="stat-value">${data.resumen_general.total_rayas}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">🏆 Total Puntos</div>
+                            <div class="stat-value">${data.resumen_general.total_puntos}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            html += notaPeriodo;
+
+            // Tabla de Jugadores del Periodo
+            if (tieneDatos) {
+                html += `
+                    <div class="card">
+                        <div class="card-title">🏆 Estadísticas del periodo</div>
+                        <div class="table-wrapper">
+                            <table class="ranking-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Jugador</th>
+                                        <th>✅ Ganadas</th>
+                                        <th>❌ Perdidas</th>
+                                        <th>📊 Total</th>
+                                        <th>🁚🂓 Juegos</th>
+                                        <th>🎯 Partidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                data.estadisticas_jugadores.forEach((j, idx) => {
+                    const totalClass = j.total_rayas >= 0 ? 'positive' : 'negative';
+                    const totalSigno = j.total_rayas >= 0 ? '+' : '';
+                    const rowClass = idx === 0 ? 'highlight' : '';
+                    
+                    html += `
+                                <tr class="${rowClass}">
+                                    <td style="color: #ffd700; font-weight: bold;">${idx + 1}</td>
+                                    <td>
+                                        <img src="${j.img}" class="avatar" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${j.nombre}'">
+                                        ${j.nombre}
+                                    </td>
+                                    <td class="positive">+${j.rayas_ganadas}</td>
+                                    <td class="negative">-${j.rayas_perdidas}</td>
+                                    <td class="${totalClass}">${totalSigno}${j.total_rayas}</td>
+                                    <td>${j.juegos_jugados}</td>
+                                    <td>${j.partidas_jugadas}</td>
+                                </tr>
+                    `;
+                });
+
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="card">
+                        <div class="card-title">🏆 Estadísticas del periodo</div>
+                        <p style="text-align: center; color: #8e8e93; padding: 40px;">No hay actividad registrada en este periodo</p>
+                    </div>
+                `;
+            }
+
+            // Guardar datos de jugadores globalmente
+            window.jugadoresData = data.ranking_general || [];
+
+            // Partidas del Periodo
+            if (data.partidas && data.partidas.length > 0) {
+                html += `
+                    <div class="card">
+                        <div class="card-title">🎯 Partidas del periodo</div>
+                `;
+
+                data.partidas.forEach((partida, idx) => {
+                    const juegos = data.juegos_por_partida[partida.partida_id] || [];
+                    
+                    html += `
+                        <div class="partida-item">
+                            <div class="partida-header" onclick="togglePartida(this)">
+                                <div class="info">
+                                    <span class="badge">#${idx + 1}</span>
+                                    <span>${partida.tipo_texto}</span>
+                                    <span>🕐 ${partida.hora_inicio}</span>
+                                    <span>🁚🂓 ${partida.juegos_partida} juegos</span>
+                                    <span>⭐ ${partida.rayas_partida} rayas</span>
+                                    <span>🏆 ${partida.puntos_totales_a} - ${partida.puntos_totales_b}</span>
+                                </div>
+                                <div class="icon">▼</div>
+                            </div>
+                            <div class="partida-content">
+                    `;
+
+                    juegos.forEach(juego => {
+                        html += `
+                            <div class="juego-item">
+                                <div class="juego-header">
+                                    <span class="juego-num">🁚🂓 Juego #${juego.num_juego}</span>
+                                </div>
+                                <div class="equipos">
+                                    <div class="equipo equipo-ganador">
+                                        <div class="equipo-tag">🏆 GANADORES <span class="positive">(+${juego.rayas} rayas)</span></div>
+                                        <div class="jugadores">
+                        `;
+                        
+                        juego.ganadores_nombres.forEach(nombre => {
+                            let imgSrc = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}`;
+                            if (window.jugadoresData) {
+                                const jugador = window.jugadoresData.find(j => j.nombre === nombre);
+                                if (jugador && jugador.img && jugador.img !== '') {
+                                    imgSrc = jugador.img;
+                                }
+                            }
+                            html += `
+                                            <div class="jugador">
+                                                <img src="${imgSrc}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}'">
+                                                <span>${nombre}</span>
+                                                ${juego.jugador_mano === nombre ? '<span class="mano">👑</span>' : ''}
+                                            </div>
+                            `;
+                        });
+                        
+                        html += `
+                                        </div>
+                                    </div>
+                                    <div class="equipo equipo-perdedor">
+                                        <div class="equipo-tag">💔 PERDEDORES <span class="negative">(-${juego.rayas} rayas)</span></div>
+                                        <div class="jugadores">
+                        `;
+                        
+                        juego.perdedores_nombres.forEach(nombre => {
+                            let imgSrc = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}`;
+                            if (window.jugadoresData) {
+                                const jugador = window.jugadoresData.find(j => j.nombre === nombre);
+                                if (jugador && jugador.img && jugador.img !== '') {
+                                    imgSrc = jugador.img;
+                                }
+                            }
+                            html += `
+                                            <div class="jugador">
+                                                <img src="${imgSrc}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}'">
+                                                <span>${nombre}</span>
+                                                ${juego.jugador_mano === nombre ? '<span class="mano">👑</span>' : ''}
+                                            </div>
+                            `;
+                        });
+                        
+                        html += `
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="puntaje">
+                                    Puntos: ${juego.puntos_equipo_a} - ${juego.puntos_equipo_b}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            }
+
+			// Ranking General (Histórico) - Formato: Victorias 53 [+109]  Derrotas 35 [-81]
+			if (data.ranking_general && data.ranking_general.length > 0) {
+				html += `
+					<div class="card">
+						<div class="card-title">🏆 Ranking General (Histórico)</div>
+						<div class="table-wrapper">
+							<table>
+								<thead>
+									<tr>
+										<th>#</th>
+										<th>Jugador</th>
+										<th>Rayas Totales</th>
+										<th>Juegos</th>
+										<th>Victorias</th>
+										<th>Derrotas</th>
+										<th>Efectividad</th>
+									</tr>
+								</thead>
+								<tbody>
+				`;
+
+				data.ranking_general.forEach((j, idx) => {
+					const rayasClass = j.total_rayas >= 0 ? 'positive' : 'negative';
+					const rayasSigno = j.total_rayas >= 0 ? '+' : '';
+					const efectividad = j.total_juegos > 0 ? ((j.partidas_ganadas / j.total_juegos) * 100).toFixed(1) : 0;
+					const rowClass = idx === 0 ? 'highlight' : '';
+					
+					// Rayas ganadas y perdidas (históricas)
+					const rayasPositivas = j.rayas_ganadas || 0;
+					const rayasNegativas = j.rayas_perdidas || 0;
+					
+					html += `
+								<tr class="${rowClass}">
+									<td style="color: #ffd700; font-weight: bold; text-align: center;">${idx + 1}</td>
+									<td>
+										<img src="${j.img}" class="avatar" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${j.nombre}'">
+										${j.nombre}
+									</td>
+									<td class="${rayasClass}" style="text-align: center; font-weight: bold;">${rayasSigno}${j.total_rayas}</td>
+									<td style="text-align: center;">${j.total_juegos}</td>
+									<td class="positive" style="text-align: center;">
+										${j.partidas_ganadas}
+										<span style="display: block; font-size: 11px; color: #30d158; font-weight: bold;">
+											[+${rayasPositivas}]
+										</span>
+									</td>
+									<td class="negative" style="text-align: center;">
+										${j.partidas_perdidas}
+										<span style="display: block; font-size: 11px; color: #ff453a; font-weight: bold;">
+											[-${rayasNegativas}]
+										</span>
+									</td>
+									<td style="text-align: center;">${efectividad}%</td>
+								</tr>
+					`;
+				});
+
+				html += `
+								</tbody>
+							</table>
+						</div>
+					</div>
+				`;
+			}
+            document.getElementById('content').innerHTML = html;
+        }
+
+        function togglePartida(element) {
+            element.classList.toggle('expanded');
+            const content = element.nextElementSibling;
+            content.classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

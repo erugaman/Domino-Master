@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Domino Master 9.2 - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">🁚</span>
+                    <span class="logo-text">Domino Master <span class="version">9.2</span></span>
+                </div>
+                <div class="live-badge">
+                    <span class="live-dot"></span>
+                    EN VIVO
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="grupo-selector">
+                    <select id="grupo-select" onchange="cambiarGrupo()">
+                        <option value="">Cargando grupos...</option>
+                    </select>
+                </div>
+                <div class="last-update" id="last-update">
+                    Actualizando...
+                </div>
+            </div>
+        </div>
+
+        <!-- Selector de Mesas -->
+        <div class="mesas-selector" id="mesas-selector" style="display: none;"></div>
+
+        <!-- Contenido Principal -->
+        <div id="mesa-content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Cargando datos...</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="dashboard-footer">
+            <span>Domino Master 9.2 Dashboard</span>
+            <span id="connection-status" class="connected">🟢 Conectado</span>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

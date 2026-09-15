@@ -1,0 +1,22 @@
+        // Configuración del servidor
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'domino.cazaypesca@gmail.com';
+        $mail->Password   = 'Caza&Pesca2026';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+		
+		
+$config = [
+    'smtp_host' => 'smtp.gmail.com',      // Servidor SMTP
+    'smtp_port' => 587,                    // Puerto (587 para TLS, 465 para SSL)
+    'smtp_auth' => true,
+    'smtp_user' => 'domino.cazaypesca@gmail.com',   // TU CORREO AQUÍ
+    'smtp_pass' => 'Caza&Pesca2026',         // TU CONTRASEÑA AQUÍ
+    'smtp_secure' => 'tls',                // 'tls' o 'ssl'
+    'from_email' => 'domino.cazaypesca@gmail.com',  // Correo remitente
+    'from_name' => 'Domino Master 9.2 - Test',
+    'to_email' => 'erugama@gmail.com', // CORREO DE PRUEBA
+    'to_name' => 'Usuario de Prueba'
+];

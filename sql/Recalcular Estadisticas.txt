@@ -1,0 +1,14 @@
+El grupo es 1: Caza y Pesca
+
+
+-- Recalcular un día específico
+CALL recalcular_ranking_dia(1, '2026-05-07');
+
+-- Recalcular un período de fechas
+CALL recalcular_ranking_periodo(1, '2026-05-01', '2026-05-31');
+
+-- Recalcular TODAS las estadísticas del grupo
+CALL recalcular_todas_estadisticas(1);
+
+-- Obtener ranking de un día
+CALL obtener_ranking_dia(1, '2026-05-07');
